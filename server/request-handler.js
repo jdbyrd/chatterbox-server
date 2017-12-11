@@ -39,7 +39,9 @@ var requestHandler = function(request, response) {
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
-  var statusCode = 200;
+  var headers = defaultCorsHeaders;
+
+  var statusCode = 404;
 
   let message = "";
 
@@ -52,15 +54,23 @@ var requestHandler = function(request, response) {
 
   console.log(message);
 
-  if(request.method === 'POST'){
-    statusCode = 201;
-    data.results.push(request._postData);
-    //data.results.push(message);
+  if(request.url === `/classes/messages`){
+    if(request.method === 'POST'){
+      statusCode = 201;
+      readable.on('end', function(){
+        data.results.push(JSON.parse(message));
+        response.end(JSON.stringify(data));
+      });
+    }else if(request.method === 'GET'){
+      statusCode = 200;
+    }else if(request.method === 'OPTIONS'){
+      statusCode = 200;
+    }
   }
+
   // The outgoing status.
 
   // See the note below about CORS headers.
-  var headers = defaultCorsHeaders;
 
   // Tell the client we are sending them plain text.
   //
@@ -79,7 +89,11 @@ var requestHandler = function(request, response) {
   //
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end(JSON.stringify(data));
+
+  request.on('end', function(){
+    response.end(JSON.stringify(data));
+  });
+
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
